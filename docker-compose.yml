@@ -1,0 +1,84 @@
+# Specifies the version of the Docker Compose file format (3.8 is stable and widely used)
+version: '3.8'
+
+# Defines the collection of services (containers) that make up your application
+services:
+
+  # ----------------------------------------------------
+  # Prometheus Service: The time-series database that collects and stores metrics
+  # ----------------------------------------------------
+  prometheus:
+    # Uses the specific stable version of Prometheus
+    image: prom/prometheus:v3
+    
+    # Assigns a custom name to the container for easier management and identification
+    container_name: prometheus
+    
+    # Mounts files/folders between the host machine and the container
+    volumes:
+      # Mounts the configuration file from your local directory into the container
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      # Mounts a named volume to ensure Prometheus data is preserved across container restarts
+      - prometheus-data:/prometheus
+      
+    # Overrides the default container start commands with custom flags
+    command:
+      # Tells Prometheus where to find its main configuration file inside the container
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      # Tells Prometheus where to store the collected metrics data
+      - '--storage.tsdb.path=/prometheus'
+      
+    # Maps port 9090 on your host machine to port 9090 inside the container (Web UI access)
+    ports:
+      - '9090:9090'
+      
+    # Restart policy: Automatically restarts the container if it crashes or the host reboots, unless manually stopped
+    restart: unless-stopped
+
+  # ----------------------------------------------------
+  # Grafana Service: The visualization UI used to build graphs and dashboards
+  # ----------------------------------------------------
+  grafana:
+    # Uses the official and latest Grafana image from Docker Hub
+    image: grafana/grafana:12.4.10
+    
+    # Assigns a custom name to the Grafana container
+    container_name: grafana
+    
+    # Maps port 3000 on your host machine to port 3000 inside the container (Grafana Web UI)
+    ports:
+      - '3000:3000'
+      
+    # Mounts a named volume to permanently save your dashboards, users, and plugins
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      
+    # Restart policy: Automatically restarts the container on failure
+    restart: unless-stopped
+    
+    # Defines startup order: Ensures Prometheus starts up completely before Grafana begins launching
+    depends_on:
+      - prometheus
+
+  # ----------------------------------------------------
+  # Node-Exporter Service: An agent that collects host hardware and OS metrics (CPU, RAM, Disk)
+  # ----------------------------------------------------
+  node-exporter:
+    # Uses the official and latest Node Exporter image from Docker Hub
+    image: prom/node-exporter:v1.8.2
+    
+    # Assigns a custom name to the Node Exporter container
+    container_name: node-exporter
+    
+    # Restart policy: Automatically restarts the container on failure
+    restart: unless-stopped
+
+# ----------------------------------------------------
+# Named Volumes Definition
+# These are managed by Docker and ensure your data persists even if containers are destroyed or updated
+# ----------------------------------------------------
+volumes:
+  # Persistent storage for Prometheus metrics data
+  prometheus-data:
+  # Persistent storage for Grafana settings and dashboards
+  grafana-storage:

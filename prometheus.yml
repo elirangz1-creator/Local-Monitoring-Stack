@@ -1,0 +1,24 @@
+# Global configuration settings that apply to all scraping jobs
+global:
+  # How frequently to pull (scrape) metrics from the defined targets (default is 1m)
+  scrape_interval: 15s
+
+# A list of scrape configurations determining where Prometheus pulls metrics from
+scrape_configs:
+  # ----------------------------------------------------
+  # Job 1: Prometheus self-monitoring
+  # ----------------------------------------------------
+  - job_name: 'prometheus'
+    # Static configuration allows manually specifying the target addresses
+    static_configs:
+      # Localhost works here because the internal port 9090 is accessible within the container
+      - targets: ['localhost:9090']
+
+  # ----------------------------------------------------
+  # Job 2: Host hardware and OS monitoring
+  # ----------------------------------------------------
+  - job_name: 'node-exporter'
+    static_configs:
+      # Uses the Docker container_name 'node-exporter' as the hostname within the Docker network
+      - targets: ['node-exporter:9100']
+
