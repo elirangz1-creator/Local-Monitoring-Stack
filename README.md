@@ -66,6 +66,7 @@ To instantly deploy a professional hardware dashboard without building charts ma
 To confirm that Grafana is actively monitoring your true host system hardware:
 * **Time Range**: In the top-right corner of your dashboard, set the time range to `Last 5 minutes` and the auto-refresh rate to `5s`.
 * **Load Test**: Launch a demanding local application or a browser with multiple tabs. Within 60 seconds, you should observe an identical spike in the **CPU Usage** graph inside Grafana.
+![Grafana Dashboard](dashboard.png)
 
 ---
 
