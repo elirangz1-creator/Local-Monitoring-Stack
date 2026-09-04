@@ -72,11 +72,12 @@ This project leverages three unique visual layouts to parse system telemetry:
 ### Option A: The Hardware Level (Node Exporter)
 Import Dashboard ID **`1860`** inside Grafana to view total system hardware statistics.
 ![Grafana Dashboard](Dashboard.png)
+![Grafana Dashboard](UnifiedDevOpsMasterDashboard.png)
+![Grafana Dashboard](PythonPasswordAPIDashboard.png)
 
 ### Option B: The Unified Master View
 Import your custom `dashboard.json` code using the **Import via panel JSON** window inside Grafana to generate a unified operations platform. This binds hardware consumption metrics and application-level traffic queries into a single master view.
-![Grafana Dashboard](Unified DevOps Master Dashboard.png)
-![Grafana Dashboard](Python Password API Dashboard.png)
+
 ---
 
 ## 🔒 Security Notice & Hardening
