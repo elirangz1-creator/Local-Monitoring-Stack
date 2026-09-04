@@ -1,24 +1,35 @@
-# Global configuration settings that apply to all scraping jobs
+# Global configuration settings that apply universally across all scraping operations
 global:
-  # How frequently to pull (scrape) metrics from the defined targets (default is 1m)
+  # Defines how frequently Prometheus will pull (scrape) data from targeted endpoints (default is 1m)
   scrape_interval: 15s
 
-# A list of scrape configurations determining where Prometheus pulls metrics from
+# Contains all target configurations directing Prometheus where to collect performance metrics from
 scrape_configs:
-  # ----------------------------------------------------
-  # Job 1: Prometheus self-monitoring
-  # ----------------------------------------------------
+  # --------------------------------------------------------------------------------------
+  # Job 1: Prometheus Internal Monitoring
+  # --------------------------------------------------------------------------------------
   - job_name: 'prometheus'
-    # Static configuration allows manually specifying the target addresses
+    # Static configuration allows manual entry of fixed network target endpoints
     static_configs:
-      # Localhost works here because the internal port 9090 is accessible within the container
+      # Localhost works here because port 9090 is internal and running within this same container context
       - targets: ['localhost:9090']
 
-  # ----------------------------------------------------
-  # Job 2: Host hardware and OS monitoring
-  # ----------------------------------------------------
+  # --------------------------------------------------------------------------------------
+  # Job 2: Host Hardware and OS Performance Monitoring
+  # --------------------------------------------------------------------------------------
   - job_name: 'node-exporter'
+    # Static configuration allows manual entry of fixed network target endpoints
     static_configs:
-      # Uses the Docker container_name 'node-exporter' as the hostname within the Docker network
+      # RELIABLE INTERNAL DOCKER ROUTING: Uses the service name 'node-exporter' as a direct hostname.
+      # Docker's internal DNS automatically resolves this to the correct isolated container IP address.
       - targets: ['node-exporter:9100']
 
+  # --------------------------------------------------------------------------------------
+  # Job 3: Custom Python Application Metrics Scraper (Password API Component)
+  # --------------------------------------------------------------------------------------
+  - job_name: 'password-api'
+    # Static configuration allows manual entry of fixed network target endpoints
+    static_configs:
+      # INTERNAL SERVICE ROUTING: Points directly to the container service name 'password-api' on port 5000.
+      # This enables Prometheus to isolate and scrape the custom application metrics exported via the '/metrics' path.
+      - targets: ['password-api:5000']

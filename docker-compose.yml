@@ -1,84 +1,96 @@
-# Specifies the version of the Docker Compose file format (3.8 is stable and widely used)
-version: '3.8'
-
-# Defines the collection of services (containers) that make up your application
+# Defines the collection of services (containers) that make up your infrastructure monitoring stack
 services:
 
-  # ----------------------------------------------------
+  # --------------------------------------------------------------------------------------
   # Prometheus Service: The time-series database that collects and stores metrics
-  # ----------------------------------------------------
+  # --------------------------------------------------------------------------------------
   prometheus:
-    # Uses the specific stable version of Prometheus
-    image: prom/prometheus:v3
-    
-    # Assigns a custom name to the container for easier management and identification
+    # Uses the stable LTS v2 image to ensure maximum compatibility with community dashboards (prevents CPU metric missing bugs)
+    image: prom/prometheus:v2.55.1
+    # Assigns a custom name to the container for easier management and internal DNS routing
     container_name: prometheus
-    
-    # Mounts files/folders between the host machine and the container
+    # Mounts essential configuration files and persistent data directories into the container
     volumes:
-      # Mounts the configuration file from your local directory into the container
+      # Mounts the local prometheus config file from your host machine into the container path
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      # Mounts a named volume to ensure Prometheus data is preserved across container restarts
+      # Mounts a named volume to ensure Prometheus metric history persists across container restarts
       - prometheus-data:/prometheus
-      
-    # Overrides the default container start commands with custom flags
+    # Overrides the default container startup flags to inject custom configuration paths
     command:
-      # Tells Prometheus where to find its main configuration file inside the container
+      # Tells Prometheus where to locate its core scraping and settings configuration file
       - '--config.file=/etc/prometheus/prometheus.yml'
-      # Tells Prometheus where to store the collected metrics data
+      # Tells Prometheus where to save all incoming historical time-series metric data
       - '--storage.tsdb.path=/prometheus'
-      
-    # Maps port 9090 on your host machine to port 9090 inside the container (Web UI access)
+    # Maps container port 9090 to host machine port 9090
     ports:
-      - '9090:9090'
-      
-    # Restart policy: Automatically restarts the container if it crashes or the host reboots, unless manually stopped
+      # SECURITY BEST PRACTICE: Bound strictly to 127.0.0.1 (localhost) to block public internet sniffing and unauthorized entry
+      - '127.0.0.1:9090:9090'
+    # Automatically restarts the container if it crashes, unless explicitly stopped by the developer
     restart: unless-stopped
 
-  # ----------------------------------------------------
-  # Grafana Service: The visualization UI used to build graphs and dashboards
-  # ----------------------------------------------------
+  # --------------------------------------------------------------------------------------
+  # Grafana Service: The visualization dashboard platform and analytics UI
+  # --------------------------------------------------------------------------------------
   grafana:
-    # Uses the official and latest Grafana image from Docker Hub
-    image: grafana/grafana:12.4.10
-    
-    # Assigns a custom name to the Grafana container
+    # Pulls the latest stable official distribution of Grafana
+    image: grafana/grafana:latest
+    # Assigns a custom name to the container for easier management
     container_name: grafana
-    
-    # Maps port 3000 on your host machine to port 3000 inside the container (Grafana Web UI)
+    # Maps container port 3000 to host machine port 3000
     ports:
-      - '3000:3000'
-      
-    # Mounts a named volume to permanently save your dashboards, users, and plugins
+      # SECURITY BEST PRACTICE: Bound strictly to 127.0.0.1 (localhost) to secure the login screen from brute-force scanning
+      - '127.0.0.1:3000:3000'
+    # Mounts a named volume to preserve dashboards, plugins, and datasource mappings permanently
     volumes:
-      - grafana-storage:/var/lib/grafana
-      
-    # Restart policy: Automatically restarts the container on failure
+      - grafana-data:/var/lib/grafana
+    # Automatically restarts the container if it crashes, unless explicitly stopped by the developer
     restart: unless-stopped
-    
-    # Defines startup order: Ensures Prometheus starts up completely before Grafana begins launching
-    depends_on:
-      - prometheus
 
-  # ----------------------------------------------------
-  # Node-Exporter Service: An agent that collects host hardware and OS metrics (CPU, RAM, Disk)
-  # ----------------------------------------------------
+  # --------------------------------------------------------------------------------------
+  # Node Exporter Service: Lightweight collector that gathers hardware metrics from the host OS
+  # --------------------------------------------------------------------------------------
   node-exporter:
-    # Uses the official and latest Node Exporter image from Docker Hub
-    image: prom/node-exporter:v1.8.2
-    
-    # Assigns a custom name to the Node Exporter container
-    container_name: node-exporter
-    
-    # Restart policy: Automatically restarts the container on failure
+    # Pulls the latest stable official distribution of Node Exporter
+    image: prom/node-exporter:latest
+    # Assigns a custom name to the container for easier management
+    container_name: node_exporter
+    # Exposes specific host system paths to the container (read-only) so it can see true hardware stats
+    volumes:
+      # Provides access to kernel process and hardware subsystem information
+      - /proc:/host/proc:ro
+      # Provides access to device, driver, and system bus information
+      - /sys:/host/sys:ro
+      # Provides access to the root filesystem to monitor available disk space accurately
+      - /:/rootfs:ro
+    # Custom flags telling Node Exporter where to find the mapped host system mount paths
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      # Excludes internal/virtual container mounts from clogging the physical disk storage charts
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    # Maps container port 9100 to host machine port 9100
+    ports:
+      # SECURITY BEST PRACTICE: Bound strictly to 127.0.0.1 (localhost) to protect raw system metrics exposure
+      - '127.0.0.1:9100:9100'
+    # Automatically restarts the container if it crashes, unless explicitly stopped by the developer
     restart: unless-stopped
 
-# ----------------------------------------------------
-# Named Volumes Definition
-# These are managed by Docker and ensure your data persists even if containers are destroyed or updated
-# ----------------------------------------------------
+  # --------------------------------------------------------------------------------------
+  # Python Password API Service: Our custom application containing internal metrics
+  # --------------------------------------------------------------------------------------
+  password-api:
+    # Tells Docker Compose to build the image locally using the Dockerfile in the current directory
+    build: .
+    # Assigns a custom name to the container for easier management and logs tracking
+    container_name: password_api
+    # Maps container port 5000 to host machine port 5000 to expose our web API
+    ports:
+      # SECURITY BEST PRACTICE: Bound strictly to 127.0.0.1 (localhost) to keep the app secure from the internet
+      - '127.0.0.1:5000:5000'
+    # Automatically restarts the container if it crashes, unless explicitly stopped by the developer
+    restart: unless-stopped
+
+# Declares the global persistent volumes managed by Docker to protect database information from accidental loss
 volumes:
-  # Persistent storage for Prometheus metrics data
   prometheus-data:
-  # Persistent storage for Grafana settings and dashboards
-  grafana-storage:
+  grafana-data:
