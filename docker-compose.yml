@@ -13,6 +13,8 @@ services:
     volumes:
       # Mounts the local prometheus config file from your host machine into the container path
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      # NEW: Mounts the custom alerting rules file containing threshold evaluation logic
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml
       # Mounts a named volume to ensure Prometheus metric history persists across container restarts
       - prometheus-data:/prometheus
     # Overrides the default container startup flags to inject custom configuration paths
@@ -90,7 +92,26 @@ services:
     # Automatically restarts the container if it crashes, unless explicitly stopped by the developer
     restart: unless-stopped
 
+  # --------------------------------------------------------------------------------------
+  # Alertmanager Service: Routes compiled metrics warnings from Prometheus straight to Slack
+  # --------------------------------------------------------------------------------------
+  alertmanager:
+    # Pulls the latest stable official distribution of Alertmanager
+    image: prom/alertmanager:latest
+    # Assigns a custom name to the container for log tracking and internal communication
+    container_name: alertmanager
+    # Mounts the local routing and webhook configurations into the container path
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    # Maps container port 9093 to host machine port 9093
+    ports:
+      # SECURITY BEST PRACTICE: Bound strictly to 127.0.0.1 (localhost) to keep webhooks isolated
+      - '127.0.0.1:9093:9093'
+    # Automatically restarts the container if it crashes, unless explicitly stopped by the developer
+    restart: unless-stopped
+
 # Declares the global persistent volumes managed by Docker to protect database information from accidental loss
 volumes:
   prometheus-data:
   grafana-data:
+

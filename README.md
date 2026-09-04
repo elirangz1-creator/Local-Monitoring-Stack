@@ -4,8 +4,11 @@
 ![Python](https://shields.io)
 ![Prometheus](https://shields.io)
 ![Grafana](https://shields.io)
+![Slack](https://shields.io)
 
-A production-ready, highly secure, and cross-platform DevOps monitoring ecosystem orchestrated via Docker Compose. This stack provides complete visibility by capturing **host-level hardware metrics** (CPU, Memory, Disk, Network) while simultaneously scraping **custom application metrics** (Request counts, latency, and business logic tokens) from a native Python Flask API.
+A production-ready, highly secure, and cross-platform DevOps monitoring ecosystem orchestrated via Docker Compose. This stack provides complete visibility by capturing **host-level hardware metrics** (CPU, Memory, Disk, Network) while simultaneously scraping **custom application metrics** (Request counts, latency, and business logic tokens) from a native Python Flask API. 
+
+Furthermore, it features an automated, real-time threshold notification pipeline routing active telemetry incidents directly into a dedicated **Slack** operations channel.
 
 *(Tested on Linux/Ubuntu. Native compatibility extends seamlessly to macOS and Windows WSL2 environments).*
 
@@ -14,10 +17,11 @@ A production-ready, highly secure, and cross-platform DevOps monitoring ecosyste
 ## 🏗️ Architecture Components
 
 * **Docker Compose**: Orchestrates and manages the isolated lifecycle of your service containers.
-* **Prometheus (v2.55.1 LTS)**: Time-Series Database (TSDB) handling periodic target scraping and data retention.
-* **Grafana**: Advanced visualization and analytical telemetry interface for charts, dashboards, and thresholds.
-* **Node Exporter**: Lightweight hardware metrics aggregator interfacing safely with core OS paths.
-* **Python Password API**: Custom-built Python Flask web service embedding internal Prometheus instrumentation (`Counter` / `Histogram`) to export software runtime performance data.
+* **Prometheus (v2.55.1 LTS)**: Time-Series Database (TSDB) handling periodic target scraping, evaluation rules, and operational data retention.
+* **Alertmanager**: Gathers triggered anomalies from Prometheus, applies deduplication/inhibitions, and routes formatted incident blocks to remote targets.
+* **Grafana**: Advanced visualization and analytical telemetry interface for dashboards and metrics checking.
+* **Node Exporter**: Lightweight hardware metrics aggregator interfacing safely with core host OS kernel paths.
+* **Python Password API**: Custom-built Python Flask web service embedding native Prometheus instrumentation (`Counter` / `Histogram`) to export software runtime behavior.
 
 ---
 
@@ -26,14 +30,17 @@ A production-ready, highly secure, and cross-platform DevOps monitoring ecosyste
 Ensure your workspace directory maintains the following file layout:
 
 ```text
-├── docker-compose.yml     # Complete service container specifications & local port bindings
-├── prometheus.yml         # Scrape intervals, target configurations, and container routing
+├── docker-compose.yml     # Complete service container specifications & loopback port bindings
+├── prometheus.yml         # Scrape configurations, target definitions, and routing to Alertmanager
+├── alertmanager.yml       # Global alert routing rules and Slack Incoming Webhook mappings
+├── alert_rules.yml        # Hardcoded multi-tier infrastructure threshold conditions
 ├── app.py                 # Instrumented Python password generator application source
 ├── requirements.txt       # Hardcoded Python dependencies (Flask, prometheus-client)
 ├── Dockerfile             # Multi-stage container recipe for the Python application service
-├── .gitignore             # Strict layer preventing database storage folders from leaking to GitHub
+├── .gitignore             # Strict layer preventing temporary database storage leakage to GitHub
 ├── Dashboard.png          # Node Exporter visualization screenshot
-├── DevOpsMasterDB.png     # Unified DevOps master monitoring view screenshot
+├── UnifiedDevOpsMasterDashboard.png # Master single-pane monitoring view screenshot
+├── PythonPasswordAPIDashboard.png # Custom Python framework metric dashboard screenshot
 └── README.md              # This central documentation file
 ```
 
@@ -65,6 +72,22 @@ Access the central monitoring dashboard UI at [http://127.0.0.1:3000](http://127
 
 ---
 
+## 🔔 Proactive Proactive Incident Notification (Slack)
+
+The environment includes a direct infrastructure-to-chat monitoring loop evaluating raw machine performance conditions against hardcoded alert thresholds.
+
+### How it Works:
+1. **Prometheus Engine**: Constantly evaluates current metric values against rules set in `alert_rules.yml`.
+2. **Alertmanager Daemon**: Intercepts active failures, groups matching alarms, structures layout formatting schemas, and dispatches JSON records via an encrypted webhook.
+3. **Slack Receiver**: Posts live warnings straight to your operational channel containing severities, timestamps, and impact details.
+![Grafana Dashboard](slackAlert.png)
+
+
+### Real-Time Pipeline Verification:
+Active alerts can be inspected natively at [http://127.0.0](http://127.0.0) to observe state changes shifting automatically from `INACTIVE` ➡️ `PENDING` ➡️ `FIRING`.
+
+---
+
 ## 📊 Dashboard Visualizations
 
 This project leverages three unique visual layouts to parse system telemetry:
@@ -72,11 +95,11 @@ This project leverages three unique visual layouts to parse system telemetry:
 ### Option A: The Hardware Level (Node Exporter)
 Import Dashboard ID **`1860`** inside Grafana to view total system hardware statistics.
 ![Grafana Dashboard](Dashboard.png)
-![Grafana Dashboard](UnifiedDevOpsMasterDashboard.png)
-![Grafana Dashboard](PythonPasswordAPIDashboard.png)
 
 ### Option B: The Unified Master View
 Import your custom `dashboard.json` code using the **Import via panel JSON** window inside Grafana to generate a unified operations platform. This binds hardware consumption metrics and application-level traffic queries into a single master view.
+![Grafana Dashboard](UnifiedDevOpsMasterDashboard.png)
+![Grafana Dashboard](PythonPasswordAPIDashboard.png)
 
 ---
 
@@ -84,6 +107,7 @@ Import your custom `dashboard.json` code using the **Import via panel JSON** win
 **Production Architecture Warning:** This stack utilizes hardened loopback configurations. Inside the `docker-compose.yml` manifest, all external port allocations are bound directly to `127.0.0.1`:
 * `127.0.0.1:3000:3000` (Grafana UI Protection)
 * `127.0.0.1:9090:9090` (Prometheus API Engine Protection)
+* `127.0.0.1:9093:9093` (Alertmanager Endpoint Protection)
 * `127.0.0.1:5000:5000` (Python API Port Protection)
 
 This configuration prevents automated network sniffers, public bots, and external unauthorized IPs from sweeping your raw metrics or attacking your application screens. If remote external accessibility is required later, deploy a secure reverse proxy layer (e.g., Nginx, Traefik) equipped with strict SSL/TLS encryption certificates.

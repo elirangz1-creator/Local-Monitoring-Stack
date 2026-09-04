@@ -1,0 +1,34 @@
+# Balanced production environment alerting rules
+groups:
+  - name: host_alerts
+    rules:
+      - alert: HostHighCPUUsage
+        # TRIGGER: Fires only if total host CPU utilization exceeds 85%
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        # TIME THRESHOLD: Must remain high for 5 consecutive minutes to avoid false positives
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🚨 High CPU utilization detected on the host machine"
+          description: "The system CPU load has sustained levels above 85% for more than 5 minutes. Please investigate top resource-consuming processes."
+
+
+
+##=================================================================================================================================================================
+##for Debug only- (instant alert)
+## Contains the metric warning parameters and trigger evaluation logic
+#groups:
+ # - name: host_alerts
+   # rules:
+     # - alert: InstantCPUCheck
+        ## FORCED TRIGGER: Checks if CPU load is greater than 0% (always true)
+       # expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 0
+        # FORCED TRIGER: 0s means it will switch to FIRING state instantly without waiting
+       # for: 0s
+       # labels:
+         # severity: critical
+       # annotations:
+         # summary: "🚀 DevOps Test Alert Triggered Successfully!"
+         # description: "This is a forced baseline alert designed to test the full pipeline integration between Prometheus, Alertmanager, and Slack."
+###================================================================================================================================================================

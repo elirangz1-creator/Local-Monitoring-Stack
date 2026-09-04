@@ -1,0 +1,22 @@
+# Global configuration settings for Alertmanager
+global:
+  # The resolving timeout when an alert clears up
+  resolve_timeout: 5m
+
+# Defines the routing tree for incoming alerts from Prometheus
+route:
+  receiver: 'slack-notifications'
+  group_by: ['alertname']
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 3h
+
+# Defines the receivers and their communication channels (Slack webhook configuration)
+receivers:
+  - name: 'slack-notifications'
+    slack_configs:
+      - channel: '#alerts-devops'
+        # IMPORTANT: Replace the URL below with your actual Slack Webhook URL
+        api_url: 'https://hooks.slack.com/'
+        text: "🚨 *Alert:* {{ .CommonAnnotations.summary }}\n📌 *Description:* {{ .CommonAnnotations.description }}\n🔥 *Severity:* {{ .CommonLabels.severity }}"
+        send_resolved: true

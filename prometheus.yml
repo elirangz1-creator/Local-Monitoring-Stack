@@ -3,6 +3,18 @@ global:
   # Defines how frequently Prometheus will pull (scrape) data from targeted endpoints (default is 1m)
   scrape_interval: 15s
 
+# ALERTING CONFIGURATION: Tells Prometheus where to forward active triggers
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            # Connects directly to the Alertmanager container using Docker's internal DNS on port 9093
+            - 'alertmanager:9093'
+
+# RULE FILES: Instructs Prometheus to load warning parameters and alert logic files
+rule_files:
+  - "alert_rules.yml"
+
 # Contains all target configurations directing Prometheus where to collect performance metrics from
 scrape_configs:
   # --------------------------------------------------------------------------------------
