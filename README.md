@@ -75,8 +75,8 @@ Import Dashboard ID **`1860`** inside Grafana to view total system hardware stat
 
 ### Option B: The Unified Master View
 Import your custom `dashboard.json` code using the **Import via panel JSON** window inside Grafana to generate a unified operations platform. This binds hardware consumption metrics and application-level traffic queries into a single master view.
-![Grafana Dashboard](DevOpsMasterDB.png)
-
+![Grafana Dashboard](Unified DevOps Master Dashboard.png)
+![Grafana Dashboard](Python Password API Dashboard.png)
 ---
 
 ## 🔒 Security Notice & Hardening
